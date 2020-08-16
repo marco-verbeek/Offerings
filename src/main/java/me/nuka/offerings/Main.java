@@ -32,8 +32,10 @@ public class Main extends JavaPlugin implements Listener {
     private HashMap<String, Location[]> temples = new HashMap<>();
     private HashMap<String, RandomCollection<ItemStack>> rewards = new HashMap<>();
 
-    // TODO: fill this.rewards with ItemStacks & their probability FROM CONFIG
     // TODO: cant do more than one offering at a time
+    // Implemented using a HashMap<String, boolean> "currentlyInUse"
+
+    // TODO: Separate functions in EventListener, Utils, Items Classes
 
     @Override
     public void onEnable() {
@@ -47,6 +49,7 @@ public class Main extends JavaPlugin implements Listener {
             return;
         }
 
+        // TODO: fill these with ItemStacks & their probability FROM CONFIG
         RandomCollection<ItemStack> randomCollection = new RandomCollection<>();
         randomCollection.add(5, new ItemStack(Material.WITHER_ROSE));
         randomCollection.add(30, new ItemStack(Material.DIAMOND_AXE));
@@ -85,6 +88,8 @@ public class Main extends JavaPlugin implements Listener {
 
             ArrayList<String> lore = new ArrayList<>();
             lore.add("");
+
+            // TODO: create new items, and clean this horrible implementation
 
             if(args.length != 0) {
                 String itemName = args[0];
