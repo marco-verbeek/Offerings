@@ -180,13 +180,26 @@ public class Main extends JavaPlugin implements Listener {
     }
 
 
+    // TODO: separate these into rewards.yml and temples.yml
     private void loadConfig(){
-        this.getConfig().getConfigurationSection("temples").getKeys(false).forEach(key -> {
+        // Temples
+        Objects.requireNonNull(this.getConfig().getConfigurationSection("temples")).getKeys(false).forEach(key -> {
             ArrayList<Location> temples = (ArrayList<Location>) getConfig().get("temples." + key);
             Location[] templeLocations = new Location[2];
+
+            assert temples != null;
+
             templeLocations[0] = temples.get(0);
             templeLocations[1] = temples.get(1);
             this.temples.put(key, templeLocations);
+        });
+
+        // Temple-specific Rewards
+        Objects.requireNonNull(this.getConfig().getConfigurationSection("rewards")).getKeys(false).forEach(key -> {
+            String templeName = this.getConfig().getString("rewards." + key);
+
+            String itemName = this.getConfig().getString("rewards." + templeName + ".item");
+            double itemChance = this.getConfig().getDouble("rewards." + key + ".chance");
         });
     }
 
@@ -208,5 +221,4 @@ public class Main extends JavaPlugin implements Listener {
         Collections.shuffle(rewards);
         return rewards.get(0);
     }
-
 }
