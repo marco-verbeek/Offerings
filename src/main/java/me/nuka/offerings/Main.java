@@ -2,31 +2,22 @@ package me.nuka.offerings;
 
 import com.gmail.filoghost.holographicdisplays.api.Hologram;
 import com.gmail.filoghost.holographicdisplays.api.HologramsAPI;
-import com.sk89q.worldedit.IncompleteRegionException;
-import com.sk89q.worldedit.WorldEdit;
-import com.sk89q.worldedit.bukkit.BukkitAdapter;
-import com.sk89q.worldedit.bukkit.BukkitPlayer;
-import com.sk89q.worldedit.regions.Region;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
-import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Item;
 import org.bukkit.entity.Player;
-import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
-import org.bukkit.event.block.SignChangeEvent;
-import org.bukkit.event.player.PlayerDropItemEvent;
-import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
 
 import java.util.*;
+
+import static me.nuka.offerings.Utils.giveBlessing;
 
 public class Main extends JavaPlugin implements Listener {
     private HashMap<String, Location[]> temples = new HashMap<>();
@@ -35,15 +26,12 @@ public class Main extends JavaPlugin implements Listener {
     // TODO: cant do more than one offering at a time
     // Implemented using a HashMap<String, boolean> "currentlyInUse"
 
-    // TODO: Separate functions in EventListener, Utils, Items Classes
-
     @Override
     public void onEnable() {
         this.getServer().getPluginManager().registerEvents(this, this);
 
         if (!Bukkit.getPluginManager().isPluginEnabled("HolographicDisplays")) {
             getLogger().severe("*** HolographicDisplays is not installed or not enabled. ***");
-            getLogger().severe("*** This plugin will be disabled. ***");
 
             this.setEnabled(false);
             return;
@@ -115,109 +103,7 @@ public class Main extends JavaPlugin implements Listener {
         return true;
     }
 
-    private void giveBlessing(Player player, Material mat, ArrayList<String> lore, int qty, boolean enchant) {
-        ItemStack offeringItem = new ItemStack(mat);
-        offeringItem.setAmount(qty);
-
-        ItemMeta meta = offeringItem.getItemMeta();
-
-        meta.setDisplayName(ChatColor.translateAlternateColorCodes('&', "&7&nBlessing"));
-        meta.setLore(lore);
-
-        offeringItem.setItemMeta(meta);
-
-        if(enchant) enchant(offeringItem);
-
-        player.getInventory().addItem(offeringItem);
-    }
-
-    @EventHandler
-    public void onPlayerDropItem(PlayerDropItemEvent event){
-        if(event == null) return;
-
-        Player player = event.getPlayer();
-        Item itemDropped = event.getItemDrop();
-
-        if(itemDropped.getItemStack().getItemMeta().getLore().isEmpty()) return;
-
-        String lore = ChatColor.stripColor(itemDropped.getItemStack().getItemMeta().getLore().get(1));
-
-        if(!lore.contains("Offering for the")) return;
-        itemDropped.setPickupDelay(20);
-
-        new BukkitRunnable() {
-            @Override
-            public void run() {
-                String templeName = droppedInOffering(itemDropped.getLocation());
-                if(templeName == null || templeName.equals("")) return;
-
-                // TODO if itemStack.getAmount > 1, reimburse the other ones
-
-                itemDropped.remove();
-                performOffering(player, itemDropped, templeName);
-            }
-        }.runTaskLater(this, 30);
-    }
-
-    @EventHandler
-    public void onSignChange(SignChangeEvent event){
-        if(event == null) return;
-        if(!event.getLine(0).equalsIgnoreCase("[Offering]")) return;
-
-        if(!event.getPlayer().hasPermission("offerings.create")) {
-            event.getPlayer().sendMessage("You do not have the permission to create Offerings.");
-            return;
-        }
-
-        if(event.getLine(1).equals("")) {
-            event.getPlayer().sendMessage("You need to specify the temple name on line 2.");
-            return;
-        }
-
-        this.temples.put(event.getLine(1), getWorldEditMinMax(event.getPlayer()));
-        event.getPlayer().sendMessage("Offering successfully created.");
-    }
-
-    private Location[] getWorldEditMinMax(Player player){
-        BukkitPlayer bPlayer = BukkitAdapter.adapt(player);
-        Region selection = null;
-
-        try {
-            selection = WorldEdit.getInstance().getSessionManager().get(bPlayer).getSelection(bPlayer.getWorld());
-        } catch (IncompleteRegionException e) {
-            e.printStackTrace();
-            return null;
-        }
-
-        Location[] selectionAsLocations = new Location[2];
-        selectionAsLocations[0] = new Location(player.getWorld(), selection.getMinimumPoint().getX(), selection.getMinimumPoint().getY(), selection.getMinimumPoint().getZ());
-        selectionAsLocations[1] = new Location(player.getWorld(), selection.getMaximumPoint().getX(), selection.getMaximumPoint().getY(), selection.getMaximumPoint().getZ());
-
-        return selectionAsLocations;
-    }
-
-    private String droppedInOffering(Location dropLocation){
-        for(Map.Entry<String, Location[]> entry : this.temples.entrySet()){
-            Location[] locations = entry.getValue();
-
-            int minX = Math.min(locations[0].getBlockX(), locations[1].getBlockX());
-            int minY = Math.min(locations[0].getBlockY(), locations[1].getBlockY());
-            int minZ = Math.min(locations[0].getBlockZ(), locations[1].getBlockZ());
-
-            int maxX = Math.max(locations[0].getBlockX(), locations[1].getBlockX());
-            int maxY = Math.max(locations[0].getBlockY(), locations[1].getBlockY());
-            int maxZ = Math.max(locations[0].getBlockZ(), locations[1].getBlockZ());
-
-            if(dropLocation.getBlockX() <= maxX && dropLocation.getBlockX() >= minX)
-                if(dropLocation.getBlockY() <= maxY && dropLocation.getBlockY() >= minY)
-                    if(dropLocation.getBlockZ() <= maxZ && dropLocation.getBlockZ() >= minZ)
-                        return entry.getKey();
-        }
-
-        return null;
-    }
-
-    private void performOffering(Player player, Item itemDropped, String templeName) {
+    public void performOffering(Player player, Item itemDropped, String templeName) {
         player.sendMessage("You successfully dropped an Offering in the Temple of " + templeName);
 
         Location[] templeLoc = this.temples.get(templeName);
@@ -280,14 +166,29 @@ public class Main extends JavaPlugin implements Listener {
         return this.rewards.get(templeName).collectionAsArray();
     }
 
-    private ItemStack enchant(ItemStack item) {
-        ItemMeta itemMeta = item.getItemMeta();
-        if (itemMeta != null) {
-            itemMeta.addItemFlags(ItemFlag.HIDE_ENCHANTS);
-            itemMeta.addEnchant(Enchantment.DURABILITY, 1, true);
-            item.setItemMeta(itemMeta);
+    public String droppedInOffering(Location dropLocation){
+        for(Map.Entry<String, Location[]> entry : this.temples.entrySet()){
+            Location[] locations = entry.getValue();
+
+            int minX = Math.min(locations[0].getBlockX(), locations[1].getBlockX());
+            int minY = Math.min(locations[0].getBlockY(), locations[1].getBlockY());
+            int minZ = Math.min(locations[0].getBlockZ(), locations[1].getBlockZ());
+
+            int maxX = Math.max(locations[0].getBlockX(), locations[1].getBlockX());
+            int maxY = Math.max(locations[0].getBlockY(), locations[1].getBlockY());
+            int maxZ = Math.max(locations[0].getBlockZ(), locations[1].getBlockZ());
+
+            if(dropLocation.getBlockX() <= maxX && dropLocation.getBlockX() >= minX)
+                if(dropLocation.getBlockY() <= maxY && dropLocation.getBlockY() >= minY)
+                    if(dropLocation.getBlockZ() <= maxZ && dropLocation.getBlockZ() >= minZ)
+                        return entry.getKey();
         }
-        return item;
+
+        return null;
+    }
+
+    public HashMap<String, Location[]> getTemples() {
+        return this.temples;
     }
 
     private void loadConfig(){
