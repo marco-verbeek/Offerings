@@ -22,9 +22,7 @@ import static me.nuka.offerings.Utils.giveBlessing;
 public class Main extends JavaPlugin implements Listener {
     private final HashMap<String, Location[]> temples = new HashMap<>();
     private final HashMap<String, RandomCollection<ItemStack>> rewards = new HashMap<>();
-
-    // TODO: cant do more than one offering at a time
-    // Implemented using a HashMap<String, boolean> "currentlyInUse"
+    private HashMap<String, Boolean> currentlyInUse = new HashMap<>();
 
     @Override
     public void onEnable() {
@@ -103,7 +101,6 @@ public class Main extends JavaPlugin implements Listener {
         return true;
     }
 
-
     public String droppedInOffering(Location dropLocation){
         for(Map.Entry<String, Location[]> entry : this.temples.entrySet()){
             Location[] locations = entry.getValue();
@@ -144,7 +141,7 @@ public class Main extends JavaPlugin implements Listener {
             @Override
             public void run() {
                 if(holoLoc.getY() >= maximumY){
-                    concludeOffering(player, finalReward, hologram);
+                    concludeOffering(player, finalReward, hologram, templeName);
 
                     cancel();
                     return;
@@ -164,7 +161,7 @@ public class Main extends JavaPlugin implements Listener {
         }.runTaskTimer(this, 0, 1);
     }
 
-    private void concludeOffering(Player player, ItemStack itemStack, Hologram hologram) {
+    private void concludeOffering(Player player, ItemStack itemStack, Hologram hologram, String templeName) {
         player.sendMessage("Finished Offering with item " + itemStack.getType().toString());
 
         hologram.clearLines();
@@ -175,6 +172,7 @@ public class Main extends JavaPlugin implements Listener {
             public void run() {
                 hologram.delete();
                 player.getInventory().addItem(itemStack);
+                currentlyInUse.put(templeName, false);
             }
         }.runTaskLater(this, 3*20);
     }
@@ -191,7 +189,9 @@ public class Main extends JavaPlugin implements Listener {
 
             templeLocations[0] = temples.get(0);
             templeLocations[1] = temples.get(1);
+
             this.temples.put(key, templeLocations);
+            this.currentlyInUse.put(key, false);
         });
 
         // Temple-specific Rewards
