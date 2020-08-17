@@ -20,8 +20,8 @@ import java.util.*;
 import static me.nuka.offerings.Utils.giveBlessing;
 
 public class Main extends JavaPlugin implements Listener {
-    private HashMap<String, Location[]> temples = new HashMap<>();
-    private HashMap<String, RandomCollection<ItemStack>> rewards = new HashMap<>();
+    private final HashMap<String, Location[]> temples = new HashMap<>();
+    private final HashMap<String, RandomCollection<ItemStack>> rewards = new HashMap<>();
 
     // TODO: cant do more than one offering at a time
     // Implemented using a HashMap<String, boolean> "currentlyInUse"
@@ -116,7 +116,7 @@ public class Main extends JavaPlugin implements Listener {
         ItemStack finalReward = this.rewards.get(templeName).next();
 
         new BukkitRunnable(){
-            double maximumY = holoLoc.getY() + 3;
+            final double maximumY = holoLoc.getY() + 3;
             double time = 1;
 
             @Override
@@ -148,7 +148,7 @@ public class Main extends JavaPlugin implements Listener {
     }
 
     private void concludeOffering(Player player, ItemStack itemStack, Hologram hologram) {
-        player.sendMessage("Finished Offering with item " + itemStack.getItemMeta().getDisplayName());
+        player.sendMessage("Finished Offering with item " + itemStack.getType().toString());
 
         hologram.clearLines();
         hologram.appendItemLine(itemStack);
@@ -193,12 +193,10 @@ public class Main extends JavaPlugin implements Listener {
 
     private void loadConfig(){
         this.getConfig().getConfigurationSection("temples").getKeys(false).forEach(key -> {
-            ArrayList<Location> temples = (ArrayList<Location>) getConfig().get("temples."+key);
-
+            ArrayList<Location> temples = (ArrayList<Location>) getConfig().get("temples." + key);
             Location[] templeLocations = new Location[2];
             templeLocations[0] = temples.get(0);
             templeLocations[1] = temples.get(1);
-
             this.temples.put(key, templeLocations);
         });
     }
