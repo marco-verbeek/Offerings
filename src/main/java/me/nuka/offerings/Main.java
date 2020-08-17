@@ -26,7 +26,7 @@ public class Main extends JavaPlugin implements Listener {
 
     @Override
     public void onEnable() {
-        this.getServer().getPluginManager().registerEvents(this, this);
+        this.getServer().getPluginManager().registerEvents(new EventListener(this), this);
 
         if (!Bukkit.getPluginManager().isPluginEnabled("HolographicDisplays")) {
             getLogger().severe("*** HolographicDisplays is not installed or not enabled. ***");
@@ -34,22 +34,6 @@ public class Main extends JavaPlugin implements Listener {
             this.setEnabled(false);
             return;
         }
-
-        // TODO: fill these with ItemStacks & their probability FROM CONFIG
-        RandomCollection<ItemStack> randomCollection = new RandomCollection<>();
-        randomCollection.add(5, new ItemStack(Material.WITHER_ROSE));
-        randomCollection.add(30, new ItemStack(Material.DIAMOND_AXE));
-        randomCollection.add(1, new ItemStack(Material.NETHER_STAR));
-        randomCollection.add(50, new ItemStack(Material.STONE_HOE));
-        randomCollection.add(20, new ItemStack(Material.DIAMOND_HELMET));
-        randomCollection.add(10, new ItemStack(Material.NETHERITE_CHESTPLATE));
-        randomCollection.add(10, new ItemStack(Material.NETHERITE_SWORD));
-        randomCollection.add(20, new ItemStack(Material.NETHERITE_SCRAP));
-        randomCollection.add(20, new ItemStack(Material.GOLDEN_APPLE));
-        randomCollection.add(10, new ItemStack(Material.EMERALD_BLOCK));
-        randomCollection.add(40, new ItemStack(Material.STICKY_PISTON));
-
-        this.rewards.put("NuKa", randomCollection);
 
         this.saveDefaultConfig();
         if(this.getConfig().contains("temples"))
@@ -149,6 +133,7 @@ public class Main extends JavaPlugin implements Listener {
 
                 if(time % 4 == 0){
                     ItemStack item = getItemFromRewards(rewards);
+                    item.setAmount(1);
                     hologram.clearLines();
                     hologram.appendItemLine(item);
                 }
@@ -196,10 +181,22 @@ public class Main extends JavaPlugin implements Listener {
 
         // Temple-specific Rewards
         Objects.requireNonNull(this.getConfig().getConfigurationSection("rewards")).getKeys(false).forEach(key -> {
-            String templeName = this.getConfig().getString("rewards." + key);
+            ArrayList<String> items = new ArrayList<>(this.getConfig().getStringList("rewards." + key));
+            RandomCollection<ItemStack> randomCollection = new RandomCollection<>();
 
-            String itemName = this.getConfig().getString("rewards." + templeName + ".item");
-            double itemChance = this.getConfig().getDouble("rewards." + key + ".chance");
+           for(String item : items){
+               String[] itemValues = item.split(" ");
+
+               Material material = Material.valueOf(itemValues[0]);
+               if(material == null) {
+                   getLogger().severe("[Offerings] Item '" + itemValues[0] + "' does not exist.");
+                   continue;
+               }
+
+               randomCollection.add(Double.parseDouble(itemValues[2]), new ItemStack(material, Integer.parseInt(itemValues[1])));
+           }
+
+            this.rewards.put(key, randomCollection);
         });
     }
 
