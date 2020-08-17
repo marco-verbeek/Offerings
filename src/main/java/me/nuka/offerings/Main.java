@@ -221,4 +221,10 @@ public class Main extends JavaPlugin implements Listener {
         Collections.shuffle(rewards);
         return rewards.get(0);
     }
+    public boolean getCurrentlyInUse(String templeName) {
+        return this.currentlyInUse.get(templeName);
+    }
+    public void setCurrentlyInUse(String templeName, boolean inUse){
+        this.currentlyInUse.put(templeName, inUse);
+    }
 }

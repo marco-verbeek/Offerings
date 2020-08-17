@@ -29,8 +29,8 @@ public class EventListener implements Listener {
 
         String lore = ChatColor.stripColor(itemDropped.getItemStack().getItemMeta().getLore().get(1));
 
-        if(!lore.contains("Offering for the")) return;
-        itemDropped.setPickupDelay(20);
+        if(!lore.contains("Temple of")) return;
+        itemDropped.setPickupDelay(40);
 
         new BukkitRunnable() {
             @Override
@@ -38,9 +38,23 @@ public class EventListener implements Listener {
                 String templeName = plugin.droppedInOffering(itemDropped.getLocation());
                 if(templeName == null || templeName.equals("")) return;
 
+                if(plugin.getCurrentlyInUse(templeName)){
+                    player.getInventory().addItem(itemDropped.getItemStack());
+                    itemDropped.remove();
+                    player.sendMessage("Someone is already making an offering. Please be patient and try again when it is finished.");
+                    return;
+                }
+
                 // TODO if itemStack.getAmount > 1, reimburse the other ones
+                if(itemDropped.getItemStack().getAmount() > 1) {
+                    int amount = itemDropped.getItemStack().getAmount()-1;
+                    itemDropped.getItemStack().setAmount(amount);
+                    player.getInventory().addItem(itemDropped.getItemStack());
+                    player.sendMessage("You've dropped too many offerings. It is nice of you but we only accept them one at a time.\nYou got back your "+ amount + " offerings");
+                }
 
                 itemDropped.remove();
+                plugin.setCurrentlyInUse(templeName, true);
                 plugin.performOffering(player, itemDropped, templeName);
             }
         }.runTaskLater(plugin, 30);
