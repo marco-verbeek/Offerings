@@ -32,8 +32,10 @@ public class Main extends JavaPlugin implements Listener {
     private HashMap<String, Location[]> temples = new HashMap<>();
     private HashMap<String, RandomCollection<ItemStack>> rewards = new HashMap<>();
 
+
     // TODO: cant do more than one offering at a time
     // Implemented using a HashMap<String, boolean> "currentlyInUse"
+    private HashMap<String, Boolean> currentlyInUse = new HashMap<>();
 
     // TODO: Separate functions in EventListener, Utils, Items Classes
 
@@ -142,7 +144,7 @@ public class Main extends JavaPlugin implements Listener {
 
         String lore = ChatColor.stripColor(itemDropped.getItemStack().getItemMeta().getLore().get(1));
 
-        if(!lore.contains("Offering for the")) return;
+        if(!lore.contains("Temple of")) return;
         itemDropped.setPickupDelay(20);
 
         new BukkitRunnable() {
@@ -151,9 +153,23 @@ public class Main extends JavaPlugin implements Listener {
                 String templeName = droppedInOffering(itemDropped.getLocation());
                 if(templeName == null || templeName.equals("")) return;
 
+                if(currentlyInUse.get(templeName)){
+                    player.getInventory().addItem(itemDropped.getItemStack());
+                    itemDropped.remove();
+                    player.sendMessage("Someone is already making an offering. Please be patient and try again when it is finished.");
+                    return;
+                }
+
                 // TODO if itemStack.getAmount > 1, reimburse the other ones
+                if(itemDropped.getItemStack().getAmount() > 1) {
+                    int amount = itemDropped.getItemStack().getAmount()-1;
+                    itemDropped.getItemStack().setAmount(amount);
+                    player.getInventory().addItem(itemDropped.getItemStack());
+                    player.sendMessage("You've dropped too many offerings. It is nice of you but we only accept them one at a time.\nYou got back your "+ amount + " offerings");
+                }
 
                 itemDropped.remove();
+                currentlyInUse.put(templeName, true);
                 performOffering(player, itemDropped, templeName);
             }
         }.runTaskLater(this, 30);
@@ -236,7 +252,7 @@ public class Main extends JavaPlugin implements Listener {
             @Override
             public void run() {
                 if(holoLoc.getY() >= maximumY){
-                    concludeOffering(player, finalReward, hologram);
+                    concludeOffering(player, finalReward, hologram, templeName);
 
                     cancel();
                     return;
@@ -261,7 +277,7 @@ public class Main extends JavaPlugin implements Listener {
         return rewards.get(0);
     }
 
-    private void concludeOffering(Player player, ItemStack itemStack, Hologram hologram) {
+    private void concludeOffering(Player player, ItemStack itemStack, Hologram hologram, String templeName) {
         player.sendMessage("Finished Offering with item " + itemStack.getItemMeta().getDisplayName());
 
         hologram.clearLines();
@@ -272,6 +288,7 @@ public class Main extends JavaPlugin implements Listener {
             public void run() {
                 hologram.delete();
                 player.getInventory().addItem(itemStack);
+                currentlyInUse.put(templeName, false);
             }
         }.runTaskLater(this, 3*20);
     }
@@ -299,6 +316,7 @@ public class Main extends JavaPlugin implements Listener {
             templeLocations[1] = temples.get(1);
 
             this.temples.put(key, templeLocations);
+            this.currentlyInUse.put(key, false);
         });
     }
 
