@@ -103,6 +103,28 @@ public class Main extends JavaPlugin implements Listener {
         return true;
     }
 
+
+    public String droppedInOffering(Location dropLocation){
+        for(Map.Entry<String, Location[]> entry : this.temples.entrySet()){
+            Location[] locations = entry.getValue();
+
+            int minX = Math.min(locations[0].getBlockX(), locations[1].getBlockX());
+            int minY = Math.min(locations[0].getBlockY(), locations[1].getBlockY());
+            int minZ = Math.min(locations[0].getBlockZ(), locations[1].getBlockZ());
+
+            int maxX = Math.max(locations[0].getBlockX(), locations[1].getBlockX());
+            int maxY = Math.max(locations[0].getBlockY(), locations[1].getBlockY());
+            int maxZ = Math.max(locations[0].getBlockZ(), locations[1].getBlockZ());
+
+            if(dropLocation.getBlockX() <= maxX && dropLocation.getBlockX() >= minX)
+                if(dropLocation.getBlockY() <= maxY && dropLocation.getBlockY() >= minY)
+                    if(dropLocation.getBlockZ() <= maxZ && dropLocation.getBlockZ() >= minZ)
+                        return entry.getKey();
+        }
+
+        return null;
+    }
+
     public void performOffering(Player player, Item itemDropped, String templeName) {
         player.sendMessage("You successfully dropped an Offering in the Temple of " + templeName);
 
@@ -142,11 +164,6 @@ public class Main extends JavaPlugin implements Listener {
         }.runTaskTimer(this, 0, 1);
     }
 
-    private ItemStack getItemFromRewards(ArrayList<ItemStack> rewards) {
-        Collections.shuffle(rewards);
-        return rewards.get(0);
-    }
-
     private void concludeOffering(Player player, ItemStack itemStack, Hologram hologram) {
         player.sendMessage("Finished Offering with item " + itemStack.getType().toString());
 
@@ -162,34 +179,6 @@ public class Main extends JavaPlugin implements Listener {
         }.runTaskLater(this, 3*20);
     }
 
-    private ArrayList<ItemStack> getTempleRewards(String templeName){
-        return this.rewards.get(templeName).collectionAsArray();
-    }
-
-    public String droppedInOffering(Location dropLocation){
-        for(Map.Entry<String, Location[]> entry : this.temples.entrySet()){
-            Location[] locations = entry.getValue();
-
-            int minX = Math.min(locations[0].getBlockX(), locations[1].getBlockX());
-            int minY = Math.min(locations[0].getBlockY(), locations[1].getBlockY());
-            int minZ = Math.min(locations[0].getBlockZ(), locations[1].getBlockZ());
-
-            int maxX = Math.max(locations[0].getBlockX(), locations[1].getBlockX());
-            int maxY = Math.max(locations[0].getBlockY(), locations[1].getBlockY());
-            int maxZ = Math.max(locations[0].getBlockZ(), locations[1].getBlockZ());
-
-            if(dropLocation.getBlockX() <= maxX && dropLocation.getBlockX() >= minX)
-                if(dropLocation.getBlockY() <= maxY && dropLocation.getBlockY() >= minY)
-                    if(dropLocation.getBlockZ() <= maxZ && dropLocation.getBlockZ() >= minZ)
-                        return entry.getKey();
-        }
-
-        return null;
-    }
-
-    public HashMap<String, Location[]> getTemples() {
-        return this.temples;
-    }
 
     private void loadConfig(){
         this.getConfig().getConfigurationSection("temples").getKeys(false).forEach(key -> {
@@ -207,4 +196,17 @@ public class Main extends JavaPlugin implements Listener {
 
         this.saveConfig();
     }
+
+
+    public HashMap<String, Location[]> getTemples() {
+        return this.temples;
+    }
+    private ArrayList<ItemStack> getTempleRewards(String templeName){
+        return this.rewards.get(templeName).collectionAsArray();
+    }
+    private ItemStack getItemFromRewards(ArrayList<ItemStack> rewards) {
+        Collections.shuffle(rewards);
+        return rewards.get(0);
+    }
+
 }
