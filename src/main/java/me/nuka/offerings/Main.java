@@ -22,7 +22,7 @@ import static me.nuka.offerings.Utils.giveBlessing;
 public class Main extends JavaPlugin implements Listener {
     private final HashMap<String, Location[]> temples = new HashMap<>();
     private final HashMap<String, RandomCollection<ItemStack>> rewards = new HashMap<>();
-    private HashMap<String, Boolean> currentlyInUse = new HashMap<>();
+    private final HashMap<String, Boolean> currentlyInUse = new HashMap<>();
 
     @Override
     public void onEnable() {
@@ -192,7 +192,6 @@ public class Main extends JavaPlugin implements Listener {
                    randomCollection.add(Double.parseDouble(itemValues[2]), new ItemStack(material, Integer.parseInt(itemValues[1])));
                } catch(IllegalArgumentException ex){
                    getLogger().severe("[Offerings] Item '" + itemValues[0] + "' does not exist!");
-                   continue;
                }
            }
 
