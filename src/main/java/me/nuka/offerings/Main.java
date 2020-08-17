@@ -187,13 +187,13 @@ public class Main extends JavaPlugin implements Listener {
            for(String item : items){
                String[] itemValues = item.split(" ");
 
-               Material material = Material.valueOf(itemValues[0]);
-               if(material == null) {
-                   getLogger().severe("[Offerings] Item '" + itemValues[0] + "' does not exist.");
+               try {
+                   Material material = Material.valueOf(itemValues[0]);
+                   randomCollection.add(Double.parseDouble(itemValues[2]), new ItemStack(material, Integer.parseInt(itemValues[1])));
+               } catch(IllegalArgumentException ex){
+                   getLogger().severe("[Offerings] Item '" + itemValues[0] + "' does not exist!");
                    continue;
                }
-
-               randomCollection.add(Double.parseDouble(itemValues[2]), new ItemStack(material, Integer.parseInt(itemValues[1])));
            }
 
             this.rewards.put(key, randomCollection);
