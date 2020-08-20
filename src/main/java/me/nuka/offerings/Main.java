@@ -2,13 +2,14 @@ package me.nuka.offerings;
 
 import com.gmail.filoghost.holographicdisplays.api.Hologram;
 import com.gmail.filoghost.holographicdisplays.api.HologramsAPI;
+import me.nuka.offerings.events.EventListener;
+import me.nuka.offerings.events.TempleEffects;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
-import org.bukkit.entity.Item;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Listener;
 import org.bukkit.inventory.ItemStack;
@@ -23,6 +24,8 @@ public class Main extends JavaPlugin implements Listener {
     private final HashMap<String, Location[]> temples = new HashMap<>();
     private final HashMap<String, RandomCollection<ItemStack>> rewards = new HashMap<>();
     private final HashMap<String, Boolean> currentlyInUse = new HashMap<>();
+
+    private TempleEffects effects = new TempleEffects(this);
 
     @Override
     public void onEnable() {
@@ -106,20 +109,30 @@ public class Main extends JavaPlugin implements Listener {
         return null;
     }
 
-    public void performOffering(Player player, Item itemDropped, String templeName) {
+    public void performOffering(Player player, ItemStack itemDropped, String templeName, double startY, double endY, double perTickY) {
         player.sendMessage("You successfully dropped an Offering in the Temple of " + templeName);
 
         Location[] templeLoc = this.temples.get(templeName);
-        Location holoLoc = templeLoc[0].toVector().getMidpoint(templeLoc[1].toVector()).toLocation(player.getWorld()).add(0.5, 1, 0.5);
+        Location holoLoc = templeLoc[0].toVector().getMidpoint(templeLoc[1].toVector()).toLocation(player.getWorld()).add(0.5, startY, 0.5);
 
         Hologram hologram = HologramsAPI.createHologram(this, holoLoc);
-        hologram.appendItemLine(itemDropped.getItemStack());
+
+        ItemStack clone = itemDropped.clone();
+        clone.setAmount(1);
+        getLogger().severe("[Offerings] Amount is " + clone.getAmount());
+
+        hologram.appendItemLine(clone);
 
         ArrayList<ItemStack> rewards = getTempleRewards(templeName);
+        if(rewards == null || rewards.isEmpty()) return;
+
         ItemStack finalReward = this.rewards.get(templeName).next();
 
+        // Play Temple Specific
+        effects.play(templeName, templeLoc[0], templeLoc[1], holoLoc);
+
         new BukkitRunnable(){
-            final double maximumY = holoLoc.getY() + 3;
+            final double maximumY = holoLoc.getY() + endY;
             double time = 1;
 
             @Override
@@ -138,7 +151,7 @@ public class Main extends JavaPlugin implements Listener {
                     hologram.appendItemLine(item);
                 }
 
-                holoLoc.setY(holoLoc.getY() + 0.02);
+                holoLoc.setY(holoLoc.getY() + perTickY);
                 hologram.teleport(holoLoc);
 
                 time += 1;

@@ -1,12 +1,16 @@
-package me.nuka.offerings;
+package me.nuka.offerings.events;
 
+import me.nuka.offerings.Main;
 import org.bukkit.ChatColor;
+import org.bukkit.Material;
 import org.bukkit.entity.Item;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.SignChangeEvent;
 import org.bukkit.event.player.PlayerDropItemEvent;
+import org.bukkit.event.player.PlayerInteractEvent;
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.scheduler.BukkitRunnable;
 
 import static me.nuka.offerings.Utils.getWorldEditMinMax;
@@ -16,6 +20,28 @@ public class EventListener implements Listener {
 
     public EventListener(Main plugin){
         this.plugin = plugin;
+    }
+
+    @EventHandler
+    public void onPlayerInteract(PlayerInteractEvent event){
+        if(event == null || !event.hasBlock() || event.getClickedBlock() == null) return;
+
+        if(event.getClickedBlock().getType() != Material.LECTERN) return;
+        if(event.getPlayer().getInventory().getItemInMainHand().getType() != Material.PAPER) return;
+
+        // TODO: check item lore
+        // TODO: abstract that method, use in onPlayerDropItem as well
+
+        String templeName = plugin.droppedInOffering(event.getClickedBlock().getLocation());
+        if(templeName == null || templeName.equals("")) return;
+
+        if(plugin.getCurrentlyInUse(templeName)) return;
+
+        ItemStack handItem = event.getPlayer().getInventory().getItemInMainHand();
+        handItem.setAmount(handItem.getAmount() - 1);
+
+        plugin.setCurrentlyInUse(templeName, true);
+        plugin.performOffering(event.getPlayer(), handItem, templeName, 1.1, 2, 0.012);
     }
 
     @EventHandler
@@ -55,7 +81,7 @@ public class EventListener implements Listener {
 
                 itemDropped.remove();
                 plugin.setCurrentlyInUse(templeName, true);
-                plugin.performOffering(player, itemDropped, templeName);
+                plugin.performOffering(player, itemDropped.getItemStack(), templeName,1 , 3, 0.02);
             }
         }.runTaskLater(plugin, 30);
     }
